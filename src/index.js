@@ -9,6 +9,8 @@ function createShader(gl, type, glsl) {
   gl.compileShader(shader);
   if (gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     return shader;
+  } else {
+    console.log(gl.getShaderInfoLog(shader));
   }
 }
 
@@ -21,6 +23,8 @@ function createProgram(gl, vs, fs) {
 
   if (gl.getProgramParameter(program, gl.LINK_STATUS)) {
     return program;
+  } else {
+    console.log(gl.getProgramInfoLog(program));
   }
 }
 
@@ -40,7 +44,7 @@ function initScene(gl) {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 }
 
-function drawScene(gl, vbo, programInfo) {
+function drawScene(gl, vbo, programInfo, canvas) {
   initScene(gl);
 
   const fieldOfView = (45 * Math.PI) / 180; // in radians
@@ -86,12 +90,18 @@ function drawScene(gl, vbo, programInfo) {
     false,
     modelViewMatrix
   );
+  gl.uniform2fv(programInfo.uniformLocations.resolutionVector, [
+    canvas.width,
+    canvas.height,
+  ]);
 
   {
     const offset = 0;
     const vertexCount = 4;
     gl.drawArrays(gl.TRIANGLE_STRIP, offset, vertexCount);
   }
+
+  requestAnimationFrame(drawScene);
 }
 
 function main() {
@@ -112,6 +122,8 @@ function main() {
   const vertShader = createShader(gl, gl.VERTEX_SHADER, vertexShader);
   const fragShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShader);
 
+  console.log(fragmentShader);
+
   const program = createProgram(gl, vertShader, fragShader);
 
   const programInfo = {
@@ -122,12 +134,13 @@ function main() {
     uniformLocations: {
       projectionMatrix: gl.getUniformLocation(program, 'uProjectionMatrix'),
       modelViewMatrix: gl.getUniformLocation(program, 'uModelViewMatrix'),
+      resolutionVector: gl.getUniformLocation(program, 'uResolutionVector'),
     },
   };
 
   const buffer = createVBO(gl, vertex_position);
 
-  drawScene(gl, buffer, programInfo);
+  drawScene(gl, buffer, programInfo, gl.canvas);
 }
 
 window.onload = main();
